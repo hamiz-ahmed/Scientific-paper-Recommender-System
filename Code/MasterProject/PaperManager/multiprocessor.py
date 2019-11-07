@@ -6,14 +6,16 @@ import pdb
 
 
 def fetch_http_service_data(search_query):
-    # ssh connection has to be started in child process otherwise it doesn't work
+    # ssh connection has to be started in child process otherwise
+    # it doesn't work
     # TODO: Perform checks for correct arguments
     jobs = []
     manager = Manager()
     return_dict = manager.dict()
     API_NAMES = ['ARXIV', 'PLOS', 'SPRINGER', 'IEEE']
     for api in API_NAMES:
-        p = Process(target=call_external_services, args=(search_query, api, return_dict))
+        p = Process(target=call_external_services,
+                    args=(search_query, api, return_dict))
         p.start()
         jobs.append(p)
     for p in jobs:
@@ -23,18 +25,18 @@ def fetch_http_service_data(search_query):
     return return_dict
 
 
-def call_external_services(search_query, API_NAME, return_dict):
-    print('API Name:' + API_NAME)
+def call_external_services(search_query, api_name, return_dict):
+    print('API Name:' + api_name)
     return_dict['results'] = ''
 
-    if API_NAME == 'ARXIV':
+    if api_name == 'ARXIV':
         return_dict['ARXIV'] = serv_manager.get_arxiv_data(search_query)
-    if API_NAME == 'SPRINGER':
-        return_dict['SPRINGER'] =serv_manager.get_springer_data(search_query)
-    if API_NAME == 'PLOS':
-        return_dict['PLOS']= serv_manager.get_plos_data(search_query)
-    if API_NAME == 'IEEE':
-        return_dict['IEEE'] =  serv_manager.get_ieee_data(search_query)
+    if api_name == 'SPRINGER':
+        return_dict['SPRINGER'] = serv_manager.get_springer_data(search_query)
+    if api_name == 'PLOS':
+        return_dict['PLOS'] = serv_manager.get_plos_data(search_query)
+    if api_name == 'IEEE':
+        return_dict['IEEE'] = serv_manager.get_ieee_data(search_query)
 
 
 def save_papers_in_db(external_paper_dicts):
@@ -48,10 +50,8 @@ def save_papers_in_db(external_paper_dicts):
     #     p.join()
 
 
-
 def save_data_in_model(external_paper_dicts):
     print("These are external papers: " + str(external_paper_dicts))
-
 
     # get max_doc_id
     max_doc_id = db_helper.get_max_doc_id_from_papers()
@@ -69,7 +69,8 @@ def save_data_in_model(external_paper_dicts):
         if paper_model:
             # if paper does not exist
             print('Entering in db')
-            doc_id = utils.get_incremented_id(max_id=max_doc_id, iteration_count=paper_add_count)
+            doc_id = utils.get_incremented_id(max_id=max_doc_id,
+                                              iteration_count=paper_add_count)
             paper_model.doc_id = doc_id
             paper_model.save()
             lda.insert_paper_to_LDA(paper_model)

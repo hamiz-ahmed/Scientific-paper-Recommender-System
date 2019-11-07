@@ -7,6 +7,7 @@ from django.core.cache import cache
 import pdb
 import re
 
+
 class PaperDataManager:
 
     def __init__(self):
@@ -19,32 +20,36 @@ class PaperDataManager:
 
     # def serialize_api_response(self, response_dict):
 
-
-
     def serialize_db_paper_into_dict(self, db_paper, in_catalog):
         """
         Serializes the paper retrieved from database in to Dictionary object
         :param db_paper: Paper object of model
         :type db_paper:
+        :param in_catalog: Yes or No
+        :type
         :return: paper meta data object
         :rtype: PaperMetaData
         """
 
-        authors = pap_utils.get_authors_from_queryset(list(db_paper.authors.all()))
+        authors = pap_utils.get_authors_from_queryset(
+            list(db_paper.authors.all()))
 
         display_title = re.sub("\d+", "", db_paper.title)
 
-        serialized_paper = pap_utils.get_serialized_dict(url=db_paper.url, display_title=display_title, title=db_paper.title, abstract=db_paper.abstract,
-                                                            journal_name=db_paper.journal_name,
-                                                            published_date=db_paper.published_date,
-                                                            authors=authors, in_catalog=in_catalog)
-        return serialized_paper
+        serialized_paper = pap_utils.get_serialized_dict(
+            url=db_paper.url, display_title=display_title,
+            title=db_paper.title, abstract=db_paper.abstract,
+            journal_name=db_paper.journal_name,
+            published_date=db_paper.published_date, authors=authors,
+            in_catalog=in_catalog)
 
+        return serialized_paper
 
     def get_paper_dicts_for_query(self, search_query,
                                   response_dicts):
         """
-        Gets the paper dictionary for the searched query, from list of dictionaries
+        Gets the paper dictionary for the searched query, from list of
+        dictionaries
         :param search_query: query to be searched
         :type search_query:
         :param response_dicts:
@@ -65,27 +70,33 @@ class PaperDataManager:
         titles_matches = self.get_title_matches(search_query, titles_list)
 
         # gets dictionary objects for matched titles
-        serialized_papers = [get_paper_dict_from_title(title) for title in titles_matches]
+        serialized_papers = [get_paper_dict_from_title(title) for title in
+                             titles_matches]
         return serialized_papers
-
 
     def get_papers_for_query_from_db(self, user_id, search_query):
         """
         Searches paper for the search query returns the result set
+        :param user_id: id of the user
+        :type : int
         :param search_query: query on the title
         :type search_query: String
         """
+
         def get_paper_dict_from_title(title):
             db_paper = db_helper.get_paper_with_title(title)
             user_manager = UserManager()
-            in_user_catalog = user_manager.does_paper_exist_in_user_catalog(paper=db_paper, user_id=user_id)
-            paper_dict = self.serialize_db_paper_into_dict(db_paper, in_user_catalog)
+            in_user_catalog = user_manager.does_paper_exist_in_user_catalog(
+                paper=db_paper, user_id=user_id)
+            paper_dict = self.serialize_db_paper_into_dict(db_paper,
+                                                           in_user_catalog)
             return paper_dict
 
         # paper_titles = db_helper.get_field_from_paper('title')
         paper_titles = db_helper.get_title_like(search_query)
         title_matches = self.get_title_matches(search_query, paper_titles)
-        paper_dicts = [get_paper_dict_from_title(title) for title in title_matches]
+        paper_dicts = [get_paper_dict_from_title(title) for title in
+                       title_matches]
 
         # cache the search dictionaries
         cache.set('searched_paper_dicts', paper_dicts)
@@ -141,7 +152,8 @@ class PaperDataManager:
 
         return external_papers
 
-    def remove_common_list_elements(self, filtered_api_responses, cached_responses):
+    def remove_common_list_elements(self, filtered_api_responses,
+                                    cached_responses):
         if not cached_responses:
             return filtered_api_responses
         for api_response in filtered_api_responses[:]:
@@ -153,7 +165,8 @@ class PaperDataManager:
 
     def get_papers_from_external_sources(self, search_query):
         """
-        Fetches paper from external sources and filters the result based on the query
+        Fetches paper from external sources and filters the result
+        based on the query.
         :param search_query: the query to be search papers on
         :type search_query: basestring
         :return: list of filtered papers
@@ -169,14 +182,14 @@ class PaperDataManager:
         # save API response in database in background
         bg_task.save_external_papers_in_db_in_bg(external_paper_dicts)
 
-
-
         # get papers for the search query in
-        filtered_papers = self.get_paper_dicts_for_query(search_query, external_paper_dicts)
+        filtered_papers = self.get_paper_dicts_for_query(search_query,
+                                                         external_paper_dicts)
 
         local_searched_papers = cache.get('searched_paper_dicts')
 
         # remove papers already stored in cache
-        filtered_papers = self.remove_common_list_elements(filtered_papers, local_searched_papers)
+        filtered_papers = self.remove_common_list_elements(
+            filtered_papers, local_searched_papers)
 
         return filtered_papers

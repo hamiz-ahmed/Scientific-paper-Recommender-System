@@ -4,7 +4,6 @@ from . import multiprocessor
 import pdb
 
 
-
 def fetch_external_papers_in_parallel(search_query):
     """
     Invokes the method to fetch papers from APIS in parallel

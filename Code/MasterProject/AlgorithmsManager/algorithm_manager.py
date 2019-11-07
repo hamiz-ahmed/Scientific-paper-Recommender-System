@@ -4,15 +4,15 @@ import shutil
 import importlib
 import sys
 import os
-from GUIManager.models import Algorithm,Paper,UserMapping
+from GUIManager.models import Algorithm, Paper, UserMapping
 from django.db.utils import IntegrityError
 import os
-
 
 
 class AlgorithmNotFoundException(Exception):
     def __init__(self, *args, **kwargs):
         Exception.__init__(self, *args, **kwargs)
+
 
 class ImportManager:
     """
@@ -31,11 +31,13 @@ class ImportManager:
         :return: a list containing names of all algorithms in the project
         """
         return [dir for dir in os.listdir(self.algo_dir)
-                if os.path.isdir(os.path.join(self.algo_dir, dir)) and dir != '__pycache__']
+                if os.path.isdir(
+                os.path.join(self.algo_dir, dir)) and dir != '__pycache__']
 
     def load(self, algorithm_name):
         """
-        call this method to load an algorithm. It imports the module containing the Script class and assigns the Script
+        call this method to load an algorithm. It imports the module
+        containing the Script class and assigns the Script
         object to self.algorithm
         :param algorithm_name: Name of Algorithm to be loaded
         """
@@ -44,16 +46,19 @@ class ImportManager:
         if algorithm_name in dirs:
             # make ialgorithms.py and utils accessible to algorithm
             sys.path.append(os.path.join(sys.path[0], "AlgorithmsManager"))
-            sys.path.append(os.path.join(sys.path[0], "AlgorithmsManager","utils"))
+            sys.path.append(
+                os.path.join(sys.path[0], "AlgorithmsManager", "utils"))
 
-            algo_path = os.path.join(self.algo_dir, algorithm_name, algorithm_name)
+            algo_path = os.path.join(self.algo_dir, algorithm_name,
+                                     algorithm_name)
             algo_path = algo_path.replace(os.path.sep, ".")
 
             self.module = self.import_module(algo_path)
             self.algorithm = self.module.Script()
             return self.algorithm
         else:
-            raise AlgorithmNotFoundException("Can not find Algorithm with name : {}".format(algorithm_name))
+            raise AlgorithmNotFoundException(
+                "Can not find Algorithm with name : {}".format(algorithm_name))
 
     def upload(self, path_to_file, stats_file):
         """
@@ -114,13 +119,15 @@ class ImportManager:
         dirs = self.get_list_of_all_algorithms_in_app()
         # Check if algorithm exists in the project
         if algorithm_name in dirs:
-            shutil.rmtree("{}/{}".format(self.algo_dir, algorithm_name), onerror=self.del_even_readonly)
+            shutil.rmtree("{}/{}".format(self.algo_dir, algorithm_name),
+                          onerror=self.del_even_readonly)
 
     def rename_algorithm(self, algorithm_name, new_name):
         dirs = self.get_list_of_all_algorithms_in_app()
         # Check if algorithm exists in the project
         if algorithm_name in dirs:
-            os.rename("{}/{}".format(self.algo_dir, algorithm_name), "{}/{}".format(self.algo_dir, new_name))
+            os.rename("{}/{}".format(self.algo_dir, algorithm_name),
+                      "{}/{}".format(self.algo_dir, new_name))
 
 
 class AlgorithmManager:
@@ -134,7 +141,6 @@ class AlgorithmManager:
         self.created_by = None
         self.description = None
         self.id = None
-
 
     def delete_algorithm(self, algorithm_name):
         """
@@ -150,7 +156,8 @@ class AlgorithmManager:
         """
         ImportManager().rename_algorithm(algorithm_name, new_name)
 
-    def insert_algorithm(self, name, created_by, description, file, replace_existing):
+    def insert_algorithm(self, name, created_by, description, file,
+                         replace_existing):
         """
         Insert algorithm in project and create a database entrz for it
         :param created_by: user object of the person who wrote this algorithm
@@ -171,7 +178,8 @@ class AlgorithmManager:
                 for chunk in file.chunks():
                     destination.write(chunk)
             with open(stats_file, "w") as statsfile:
-                statsfile.write(self.created_by.username + "\n" + self.description)
+                statsfile.write(
+                    self.created_by.username + "\n" + self.description)
             algo_manager = ImportManager()
             algo_manager.upload(dest_path, stats_file)
             os.remove(dest_path)
@@ -182,18 +190,19 @@ class AlgorithmManager:
 
     def get_recommendations(self, user_id, algorithm_id):
         try:
-            recommendation_results=[]
+            recommendation_results = []
             algorithm_name = Algorithm.objects.get(pk=algorithm_id).name
             im = ImportManager()
             im.load(algorithm_name)
-            results=im.algorithm.get_recommendations(UserMapping.objects.get(user_id=user_id).external_user_id)
+            results = im.algorithm.get_recommendations(
+                UserMapping.objects.get(user_id=user_id).external_user_id)
             doc_ids = [result[0] for result in results]
             paper_objs = Paper.objects.filter(doc_id__in=doc_ids)
             paper_dict = dict()
             for paper in paper_objs:
                 paper_dict[paper.doc_id] = paper
-            for index,result in enumerate(results):
-                recommendation_results.append([index+1,
+            for index, result in enumerate(results):
+                recommendation_results.append([index + 1,
                                                paper_dict[result[0]],
                                                result[1]])
             return recommendation_results
@@ -213,7 +222,6 @@ class AlgorithmManager:
                 algo_ids.append(algo)
         return algo_ids
 
-
     def sync_database(self, user):
         """
         Synchronize database with existing algorithms in project. This adds missing entries to database and deletes
@@ -221,7 +229,8 @@ class AlgorithmManager:
         user) becomes the owner of the algorithm.
         :param user: user who will become the owner of the algorithms
         """
-        database_algo_set = {algorithm.name for algorithm in Algorithm.objects.all()}
+        database_algo_set = {algorithm.name for algorithm in
+                             Algorithm.objects.all()}
         app_algo_set = set(ImportManager().get_list_of_all_algorithms_in_app())
         missing_entries_in_database = app_algo_set - database_algo_set
         extra_entries_in_database = database_algo_set - app_algo_set
@@ -230,8 +239,3 @@ class AlgorithmManager:
         for entry in missing_entries_in_database:
             algorithm = Algorithm(name=entry, created_by=user, description="")
             algorithm.save()
-
-
-
-
-

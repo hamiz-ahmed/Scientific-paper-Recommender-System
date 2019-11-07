@@ -1,5 +1,4 @@
 import requests
-import pdb
 
 
 def get_request_from_url(url, params):
@@ -20,5 +19,3 @@ def get_request_from_url(url, params):
         return err
 
     return request
-
-

@@ -8,6 +8,7 @@ from GUIManager.models import Algorithm
 class UsersTable(tables.Table):
     class Meta:
         attrs = {'class': 'pltest'}
+
     id = tables.Column()
     username = tables.Column()
     email = tables.Column()
@@ -19,13 +20,14 @@ class UsersTable(tables.Table):
     date_joined = tables.Column()
 
 
-
 class AlgorithmsTable(tables.Table):
     modify = tables.Column(empty_values=(), orderable=False)
 
     def render_modify(self, record):
-        return mark_safe('<a class="btn btn-primary btn-sm" href=' + reverse("update_algorithm", args=[record.pk]) + '>Update</a>&nbsp'
-                         '<a class="btn btn-primary btn-sm" href=' + reverse("delete_algorithm", args=[record.pk]) + '>delete</a>')
+        return mark_safe('<a class="btn btn-primary btn-sm" href=' + reverse(
+            "update_algorithm", args=[record.pk]) + '>Update</a>&nbsp'
+                                                    '<a class="btn btn-primary btn-sm" href=' + reverse(
+            "delete_algorithm", args=[record.pk]) + '>delete</a>')
 
     class Meta:
         model = Algorithm

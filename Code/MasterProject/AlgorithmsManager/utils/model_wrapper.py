@@ -1,11 +1,10 @@
 from scipy.sparse import csr_matrix
 import Helpers.db_helper as dbh
-from GUIManager.models import PaperLDATheta
 import GUIManager.models as m
-from django.core.cache import cache
 import numpy as np
 import pickle
 import os
+
 
 def get_rating_matrix():
     rating_matrix_file_path = "rating_matrix"
@@ -13,21 +12,26 @@ def get_rating_matrix():
     if os.path.exists(rating_matrix_file_path):
         with open(rating_matrix_file_path, "rb") as pickle_fle:
             rating_matrix = pickle.load(pickle_fle)
-            renew_rating_matrix = not rating_matrix.shape[0] == m.UserMapping.objects.count() or \
-                                  not rating_matrix.shape[1] == m.Paper.objects.count()
+            renew_rating_matrix = not rating_matrix.shape[0] == \
+                                      m.UserMapping.objects.count() or \
+                                  not rating_matrix.shape[1] == \
+                                      m.Paper.objects.count()
             if not renew_rating_matrix:
                 return rating_matrix
             else:
                 os.remove(rating_matrix_file_path)
     if renew_rating_matrix:
-        rm = m.RatingMatrix.objects.all().order_by('external_user_id', 'doc_id')
-        mat = csr_matrix((m.UserMapping.objects.count(), m.Paper.objects.count())).tolil()
+        rm = m.RatingMatrix.objects.all().order_by('external_user_id',
+                                                   'doc_id')
+        mat = csr_matrix(
+            (m.UserMapping.objects.count(), m.Paper.objects.count())).tolil()
         for i in rm:
             # because matrix indexing start from 0
             mat[i.external_user_id, i.doc_id] = i.rating
         with open(rating_matrix_file_path, "wb") as pickle_file:
             pickle.dump(mat, pickle_file)
         return mat
+
 
 def get_topics_matrix():
     """
@@ -48,7 +52,8 @@ def get_topics_matrix():
             topics_matrix = pickle.load(pickle_fle)
             current_docs_num = topics_matrix.shape[0]
             additional_docs_num = m.Paper.objects.count() - current_docs_num
-            additional_docs = m.PaperLDATheta.objects.filter(doc_id__gte=current_docs_num)
+            additional_docs = m.PaperLDATheta.objects.filter(
+                doc_id__gte=current_docs_num)
             mat = np.zeros((additional_docs_num, 150))
             topics_matrix = np.append(topics_matrix, mat, axis=0)
             for i in additional_docs:

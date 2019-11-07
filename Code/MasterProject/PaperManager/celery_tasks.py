@@ -19,8 +19,10 @@ def run_paper_service_in_parallel(search_query):
     :type search_query: str
     """
     background_task = group(
-        [call_external_services.s(search_query, 'ARXIV'), call_external_services.s(search_query, 'PLOS'),
-         call_external_services.s(search_query, 'SPRINGER'), call_external_services.s(search_query, 'IEEE')]).\
+        [call_external_services.s(search_query, 'ARXIV'),
+         call_external_services.s(search_query, 'PLOS'),
+         call_external_services.s(search_query, 'SPRINGER'),
+         call_external_services.s(search_query, 'IEEE')]). \
         apply_async(queue="PaperManagerQueue")
 
     # background_task = group(
@@ -38,21 +40,26 @@ def save_papers_in_db(paper_dicts):
     """
     print("API Results:" + str(paper_dicts))
     background_task = group(
-        [save_data_in_model.s(paper_dicts)]).apply_async(queue="PaperManagerQueue")
+        [save_data_in_model.s(paper_dicts)]).apply_async(
+        queue="PaperManagerQueue")
 
 
-@app.task
-def periodic_task():
-    # This task is just to show how to set a periodic task. Donot use it. create your own task.
-    # use it only if you need a periodic task. Check commented out part in MasterProject/celery.py
+# @app.task
+# def periodic_task():
+    # This task is just to show how to set a periodic task. Donot use it.
+    # create your own task.
+    # use it only if you need a periodic task. Check commented out part
+    # in MasterProject/celery.py
 
-    timeout = 60 * 10
-    lock_id = "Task_checker"
+    # timeout = 60 * 10
+    # lock_id = "Task_checker"
     # If key has already been added, this fails. This ensures mutual exclusion
     # if cache.add(lock_id, "", timeout):
-    # Use this statement to call your celery task. Remember to assign task to specific queue or there will be chaos
+    # Use this statement to call your celery task. Remember to assign task to
+    # specific queue or there will be chaos
     # background_task = chord([header_task.s(i, "abc") for i in range(3)],
-    #                         callback_task.s("abcdef")).apply_async(queue="PaperManagerQueue")
+    #                         callback_task.s("abcdef")).apply_async(queue=
+    #                         "PaperManagerQueue")
     #
     # # you can use these celery task ids to revoke a task
     # celery_task_ids = []
@@ -72,7 +79,9 @@ def periodic_task():
 def callback_task(prev_returns, param1):
     # prev_returns are the values returned by the header tasks in a chord
     time.sleep(10)
-    print("***************", prev_returns, "**********", param1, "*************")
+    print("***************", prev_returns, "**********", param1,
+          "*************")
+
 
 @app.task
 def save_data_in_model(external_paper_dicts):
@@ -91,7 +100,8 @@ def save_data_in_model(external_paper_dicts):
         if paper_model:
             # if paper does not exist
             print('Entering in db')
-            doc_id = utils.get_incremented_id(max_id=max_doc_id, iteration_count=paper_add_count)
+            doc_id = utils.get_incremented_id(max_id=max_doc_id,
+                                              iteration_count=paper_add_count)
             paper_model.doc_id = doc_id
             paper_model.save()
 
@@ -121,14 +131,14 @@ def save_data_in_model(external_paper_dicts):
 
 
 @app.task
-def call_external_services(search_query, API_NAME):
-    print('API Name:' + API_NAME)
+def call_external_services(search_query, api_name):
+    print('API Name:' + api_name)
 
-    if API_NAME == 'ARXIV':
+    if api_name == 'ARXIV':
         return serv_manager.get_arxiv_data(search_query)
-    if API_NAME == 'SPRINGER':
+    if api_name == 'SPRINGER':
         return serv_manager.get_springer_data(search_query)
-    if API_NAME == 'PLOS':
+    if api_name == 'PLOS':
         return serv_manager.get_plos_data(search_query)
-    if API_NAME == 'IEEE':
+    if api_name == 'IEEE':
         return serv_manager.get_ieee_data(search_query)

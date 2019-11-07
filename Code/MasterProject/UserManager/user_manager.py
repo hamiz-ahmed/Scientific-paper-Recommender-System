@@ -1,8 +1,8 @@
-from  Helpers import db_helper as db, paper_utilities as pap_utils
+from Helpers import db_helper as db
 from PaperManager import paper_data_manager as pdm
-import pdb
 
-class UserManager():
+
+class UserManager:
 
     def __init__(self):
         pass
@@ -24,15 +24,15 @@ class UserManager():
         # pdb.set_trace()
         try:
             db_papers = user_catalog[0].papers.all()
-        except:
+        except Exception:
             return []
 
         paper_manager = pdm.PaperDataManager()
 
         papers_dicts = []
         for db_paper in db_papers:
-            serialized_paper = paper_manager.serialize_db_paper_into_dict(db_paper=db_paper, in_catalog=True)
+            serialized_paper = paper_manager.serialize_db_paper_into_dict(
+                db_paper=db_paper, in_catalog=True)
             papers_dicts.append(serialized_paper)
 
         return papers_dicts
-

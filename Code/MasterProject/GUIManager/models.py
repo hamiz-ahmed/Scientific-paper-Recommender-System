@@ -40,10 +40,11 @@ class Paper(models.Model):
     # TODO: rename  plurlas
     doc_id = models.IntegerField(default=-1)  # manually maintained doc_id
     url = models.CharField(max_length=255)
-    external_id = models.IntegerField(null=True) # for the bootstrapped papers (citulike_id)
+    external_id = models.IntegerField(
+        null=True)  # for the bootstrapped papers (citulike_id)
     published_date = models.DateField(null=True)
     journal_name = models.CharField(max_length=400, null=True)
-    title = models.CharField(max_length=255, unique=True) # add unique
+    title = models.CharField(max_length=255, unique=True)  # add unique
     abstract = models.TextField()
     authors = models.ManyToManyField(PaperAuthor)
     keywords = models.ManyToManyField(PaperKeyword)
@@ -56,7 +57,7 @@ class Paper(models.Model):
         # method overridden to handle exception for inserting multiple papers
         try:
             super(Paper, self).validate_unique(*args, **kwargs)
-        except ValidationError as e:
+        except ValidationError:
             print('Not unique title')
             return False
 
@@ -86,9 +87,10 @@ class Recommendation(models.Model):
     """
     algorithm = models.ForeignKey(Algorithm, on_delete=models.CASCADE)
     # Allow log entry deletion only when Recommendation Algo. is deleted
-    # User deletion should not affect this table. Evaluation metrics shall run for each entry here
+    # User deletion should not affect this table. Evaluation metrics shall run
+    # for each entry here
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
-    input_rating_count=models.BigIntegerField()
+    input_rating_count = models.BigIntegerField()
     created_date = models.DateTimeField(auto_now_add=True)
 
 
@@ -98,7 +100,8 @@ class RecommendationResult(models.Model):
     """
 
     paper = models.ForeignKey(Paper, on_delete=models.CASCADE)
-    recommendation = models.ForeignKey(Recommendation, on_delete=models.CASCADE)
+    recommendation = models.ForeignKey(Recommendation,
+                                       on_delete=models.CASCADE)
     predicted_score = models.FloatField()
     predicted_rank = models.SmallIntegerField()
     prediction_type = models.CharField(max_length=200, null=True)
@@ -111,12 +114,15 @@ class UserFeedback(models.Model):
     """
     Storing the feedback of a user for each recommended paper
     """
-    # Allow field to be null because a user can add a paper to his catalog from search.
+    # Allow field to be null because a user can add a paper to his catalog
+    # from search.
     # Search results do not have any recommendation id tied to them.
-    recommendationresult_detail = models.OneToOneField(RecommendationResult, on_delete=models.CASCADE, null=True)
+    recommendationresult_detail = models.OneToOneField(
+        RecommendationResult, on_delete=models.CASCADE, null=True)
     user_rating = models.SmallIntegerField()
     feedback_type = models.CharField(max_length=10)
     datetime = models.DateTimeField(auto_now_add=True)
+
 
 # TODO Explore the possiblity of keeping all metrics in a separate table
 # TODO Change this to a OnetoONe relation on recommendation from one2many
@@ -124,7 +130,8 @@ class EvaluationMetric(models.Model):
     """
     Storing metrics like Precision,Rank for each user query
     """
-    recommendation = models.ForeignKey(Recommendation, on_delete=models.CASCADE)
+    recommendation = models.ForeignKey(Recommendation,
+                                       on_delete=models.CASCADE)
     p_at_10 = models.FloatField()
     p_at_20 = models.FloatField(null=True)
     p_at_30 = models.FloatField(null=True)
@@ -137,6 +144,7 @@ class EvaluationMetric(models.Model):
     mrr_at_20 = models.FloatField(null=True)
     mrr_at_30 = models.FloatField(null=True)
     ctr = models.FloatField(null=True)
+
 
 class SystemRecommendations(models.Model):
     """
@@ -161,10 +169,11 @@ class RatingMatrix(models.Model):
     """
         Contains Ratings from MyCAtalog and UserFeedback
         any paper added to my_catalog will be available here
-        or when the admin converts feedback to ratings then also the below table
-        gets populated
+        or when the admin converts feedback to ratings then also the below
+        table gets populated
     """
-    user_map = models.ForeignKey(UserMapping, on_delete=models.CASCADE, default=-1)
+    user_map = models.ForeignKey(UserMapping, on_delete=models.CASCADE,
+                                 default=-1)
     paper = models.ForeignKey(Paper, on_delete=models.CASCADE)
     doc_id = models.IntegerField()
     external_user_id = models.IntegerField()
@@ -181,11 +190,14 @@ class PaperLDATheta(models.Model):
     def __str__(self):
         return "{}  {}  {}".format(self.doc_id, self.topic_id, self.value)
 
+
 class Vocabulary(models.Model):
     term_id = models.IntegerField(primary_key=True)
     term = models.CharField(max_length=100)
 
-class SystemAlgorithmRecommendationLog(models.Model):
-    system_algorithm = models.ForeignKey(SystemRecommendations,on_delete=models.CASCADE)
-    recommendation = models.OneToOneField(Recommendation, on_delete=models.CASCADE)
 
+class SystemAlgorithmRecommendationLog(models.Model):
+    system_algorithm = models.ForeignKey(SystemRecommendations,
+                                         on_delete=models.CASCADE)
+    recommendation = models.OneToOneField(Recommendation,
+                                          on_delete=models.CASCADE)
